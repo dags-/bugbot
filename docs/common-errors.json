@@ -2,12 +2,12 @@
   {
     "error": "The specified size exceeds the maximum representable size",
     "lines": [
-      "This error means that your version of Java is not capable of using the amount of ram set in your launcher options - usually because you are using 32bit Java",
+      "This error means that your version of Java is not capable of using the amount of ram set in your launcher options",
+      " - usually because you are using 32bit Java.",
       "Download and install the latest **64bit** Java for your operating system here:",
       "http://www.oracle.com/technetwork/java/javase/downloads/jre8-downloads-2133155.html",
       "",
-      "You may first need to uninstall older versions of Java:",
-      "https://bugbot.dags.me/help"
+      "See the help page for more detail: https://bugbot.dags.me/help"
     ]
   },
   {
@@ -19,15 +19,16 @@
       "2. If that fails, try download and install **64bit** Java from the link below:",
       "http://www.oracle.com/technetwork/java/javase/downloads/jre8-downloads-2133155.html",
       "",
-      "You may first need to uninstall older versions of Java:",
-      "https://bugbot.dags.me/help"
+      "See the help page for more detail: https://bugbot.dags.me/help"
     ]
   },
   {
     "error": "OutOfMemoryError",
     "lines": [
       "This means Java ran out of ram. You can fix it by assigning more ram to your game.",
-      "2GB is the recommended minimum amount."
+      "2GB is the recommended minimum amount.",
+      "",
+      "See the help page for more detail: https://bugbot.dags.me/help"
     ]
   },
   {
@@ -36,7 +37,9 @@
       "This error is caused by bad/old graphics drivers.",
       "Download and install the latest drivers for your graphics card from:",
       "- NVIDIA: http://www.nvidia.com/Download/index.aspx",
-      "- AMD: http://support.amd.com/en-us/download"
+      "- AMD: http://support.amd.com/en-us/download",
+      "",
+      "See the help page for more detail: https://bugbot.dags.me/help"
     ]
   }
 ]
