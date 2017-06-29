@@ -63,7 +63,7 @@ func scanMessage(msg *discordgo.MessageCreate) (Response, bool) {
 func scanContent(text string, ch chan Response, quit chan int) {
 	reader := strings.NewReader(text)
 	scanner := bufio.NewScanner(reader)
-	scan(scanner, ch)
+	scan(scanner, false, ch)
 	quit <- 0
 }
 
@@ -72,7 +72,7 @@ func scanContentURLs(text string, ch chan Response, quit chan int) {
 	urls := xurls.Relaxed.FindAllString(text, -1)
 	for _, url := range urls {
 		wg.Add(1)
-		go scanURL(url, ch, &wg)
+		go scanURL(url, true, ch, &wg)
 	}
 	wg.Wait()
 	quit <- 0
@@ -84,27 +84,30 @@ func scanAttachments(attachments []*discordgo.MessageAttachment, ch chan Respons
 		file := attachment.Filename
 		if strings.HasSuffix(file, ".txt") || strings.HasSuffix(file, ".log") || strings.HasSuffix(file, ".json") {
 			wg.Add(1)
-			go scanURL(attachment.URL, ch, &wg)
+			go scanURL(attachment.URL, false, ch, &wg)
 		}
 	}
 	wg.Wait()
 	quit <- 0
 }
 
-func scan(scanner *bufio.Scanner, ch chan Response) {
+func scan(scanner *bufio.Scanner, parseHtml bool, ch chan Response) {
 	for scanner.Scan() {
 		l := scanner.Text()
+		if parseHtml {
+			l = StripTags(l)
+		}
 		checkLine(l, ch)
 	}
 }
 
-func scanURL(url string, ch chan Response, wg *sync.WaitGroup)  {
+func scanURL(url string, parseHtml bool, ch chan Response, wg *sync.WaitGroup)  {
 	defer wg.Done()
 
 	resp, err := http.Get(url)
 	if err == nil {
 		scanner := bufio.NewScanner(resp.Body)
-		scan(scanner, ch)
+		scan(scanner, parseHtml, ch)
 	}
 }
 

@@ -12,6 +12,7 @@ const bugs = "https://bugbot.dags.me/common-errors.json"
 
 func main() {
 	token := flag.String("token", "", "Auth token")
+	errs := flag.String("errors", bugs, "Common errors url")
 	flag.Parse()
 
 	if *token == "" {
@@ -21,7 +22,7 @@ func main() {
 
 	go handleStop()
 
-	bot.Start(*token, bugs)
+	bot.Start(*token, errs)
 }
 
 func handleStop()  {
