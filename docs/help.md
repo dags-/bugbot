@@ -4,7 +4,7 @@ layout: default
 # Help Articles
 
 ## Assigning RAM
-If your game is running out of ram, you may need to assign more in your launcher's options.
+If your game is running out of memory, you may need to assign more RAM in your launcher's options.
 #### Mojang Launcher
 // TODO: instructions on setting JVM args in the mojang launcher
 #### Modpack Launcher
