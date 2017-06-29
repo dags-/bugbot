@@ -6,10 +6,10 @@ import (
 	"os"
 )
 
-func Start(token string, in []Bug) {
-	bugs = in
-	dg, err := discordgo.New("Bot " + token)
+func Start(token, url string) {
+	go pollBugs(url)
 
+	dg, err := discordgo.New("Bot " + token)
 	if err != nil {
 		fmt.Println("error creating Discord session,", err)
 		return

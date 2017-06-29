@@ -5,10 +5,9 @@ import (
 	"strings"
 	"text/template"
 	"bytes"
-	"math/rand"
 )
 
-var templ = "**Beep boop - common problem detected!**\n\n**Error:**\n```{{.Error}}```\n\n**Solution:**\n{{range .Lines}}{{.}}\n{{end}}"
+var templ = "{{.Mention}}\n\n**Beep boop - common problem detected!**\n\n**Error:**\n```{{.Error}}```\n\n**Solution:**\n{{range .Lines}}{{.}}\n{{end}}"
 var message = template.Must(template.New("root").Parse(templ))
 
 func onReady(s *discordgo.Session, m *discordgo.Ready) {
@@ -27,17 +26,13 @@ func onMessage(s *discordgo.Session, m *discordgo.MessageCreate) {
 
 	s.ChannelTyping(m.ChannelID)
 
-	content := strings.ToLower(m.Content)
-	name := s.State.User.Username
-	if strings.Contains(content, "thank") && strings.Contains(content, name) && rand.Intn(100) > 95 {
-		s.ChannelMessageSend(m.ChannelID, ":regional_indicator_b::regional_indicator_e::regional_indicator_e::regional_indicator_p: :robot: :regional_indicator_b::regional_indicator_o::regional_indicator_o::regional_indicator_p:")
+	if react, ok := react(s, m); ok {
+		s.ChannelMessageSend(m.ChannelID, react)
 	}
 
-	result, err := scan(m)
-	if err == nil {
+	if response, ok := scanMessage(m); ok {
 		buf := bytes.Buffer{}
-		err := message.Execute(&buf, result)
-		if err == nil {
+		if err := message.Execute(&buf, response); err == nil {
 			s.ChannelMessageSend(m.ChannelID, buf.String())
 		}
 	}

@@ -1,11 +1,11 @@
 package main
 
 import (
-	"net/http"
 	"fmt"
-	"encoding/json"
 	"github.com/dags-/bugbot/bot"
 	"flag"
+	"bufio"
+	"os"
 )
 
 func main() {
@@ -17,19 +17,18 @@ func main() {
 		return
 	}
 
-	resp, err := http.Get("https://dags-.github.io/bugbot/common-errors.json")
-	if err != nil {
-		fmt.Println(err)
-		return
+	go handleStop()
+
+	bot.Start(*token, "https://dags-.github.io/bugbot/common-errors.json")
+}
+
+func handleStop()  {
+	scanner := bufio.NewScanner(os.Stdin)
+	for scanner.Scan() {
+		if scanner.Text() == "stop" {
+			fmt.Println("Stopping...")
+			os.Exit(0)
+			break
+		}
 	}
-
-	var bugs []bot.Bug
-	err = json.NewDecoder(resp.Body).Decode(&bugs)
-
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
-
-	bot.Start(*token, bugs)
 }
