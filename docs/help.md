@@ -1,4 +1,5 @@
 ---
+title: Help Articles
 layout: default
 ---
 # Help Articles
