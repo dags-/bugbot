@@ -1,6 +1,5 @@
 ---
-title: Uninstalling Java
-layout: post
+layout: default
 ---
 
 ## Uninstall Java on Mac OS
