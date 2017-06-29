@@ -2,9 +2,13 @@
   {
     "error": "The specified size exceeds the maximum representable size",
     "lines": [
-      "This error means that your version of Java is not capable of using the amount of ram specified, usually because it's 32bit.",
+      "This error means that your version of Java is not capable of using the amount of ram set in your launcher options - usually because you are using 32bit Java",
       "Download and install the latest **64bit** Java for your operating system here:",
-      "http://www.oracle.com/technetwork/java/javase/downloads/jre8-downloads-2133155.html"
+      "http://www.oracle.com/technetwork/java/javase/downloads/jre8-downloads-2133155.html",
+      "",
+      "You may first need to uninstall older versions of Java:",
+      "Mac OS: https://www.howtogeek.com/230145/how-to-uninstall-java-on-mac-os-x/",
+      "Windows: http://www.guidingtech.com/20274/completely-remove-uninstall-java-windows-pc/"
     ]
   },
   {
@@ -14,7 +18,11 @@
       "This may be because you have 32bit Java installed, or because you have too many applications open.",
       "1. First try closing any unecessary apps, or reduce the amount of ram assigned to minecraft",
       "2. If that fails, try download and install **64bit** Java from the link below:",
-      "http://www.oracle.com/technetwork/java/javase/downloads/jre8-downloads-2133155.html"
+      "http://www.oracle.com/technetwork/java/javase/downloads/jre8-downloads-2133155.html",
+      "",
+      "You may first need to uninstall older versions of Java:",
+      "Mac OS: https://www.howtogeek.com/230145/how-to-uninstall-java-on-mac-os-x/",
+      "Windows: http://www.guidingtech.com/20274/completely-remove-uninstall-java-windows-pc/"
     ]
   },
   {
