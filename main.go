@@ -22,7 +22,7 @@ func main() {
 
 	go handleStop()
 
-	bot.Start(*token, errs)
+	bot.Start(*token, *errs)
 }
 
 func handleStop()  {
