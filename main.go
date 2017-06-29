@@ -8,7 +8,7 @@ import (
 	"os"
 )
 
-const bugs = "https://dags-.github.io/bugbot/common-errors.json"
+const bugs = "https://bugbot.dags.me/common-errors.json"
 
 func main() {
 	token := flag.String("token", "", "Auth token")
