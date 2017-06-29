@@ -1,6 +1,7 @@
 ---
 layout: default
 ---
+# Help Articles
 
 ## Assigning RAM
 If your game is running out of ram, you may need to assign more in your launcher's options.
