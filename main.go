@@ -8,6 +8,8 @@ import (
 	"os"
 )
 
+const bugs = "https://dags-.github.io/bugbot/common-errors.json"
+
 func main() {
 	token := flag.String("token", "", "Auth token")
 	flag.Parse()
@@ -19,7 +21,7 @@ func main() {
 
 	go handleStop()
 
-	bot.Start(*token, "https://dags-.github.io/bugbot/common-errors.json")
+	bot.Start(*token, bugs)
 }
 
 func handleStop()  {

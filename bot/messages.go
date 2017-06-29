@@ -7,6 +7,7 @@ import (
 	"strings"
 	"github.com/bwmarrin/discordgo"
 	"math/rand"
+	"sync"
 )
 
 type Bug struct {
@@ -35,6 +36,7 @@ func scanMessage(msg *discordgo.MessageCreate) (Response, bool) {
 	var empty Response
 
 	count := 3
+
 	quit := make(chan int, count)
 	ch := make(chan Response, 3)
 
@@ -58,18 +60,35 @@ func scanMessage(msg *discordgo.MessageCreate) (Response, bool) {
 	return empty, false
 }
 
-func checkLine(line string, ch chan Response) {
-	bugs := getBugs()
+func scanContent(text string, ch chan Response, quit chan int) {
+	reader := strings.NewReader(text)
+	scanner := bufio.NewScanner(reader)
+	scan(scanner, ch)
+	quit <- 0
+}
 
-	for _, bug := range bugs {
-		if strings.Contains(line, bug.Error) {
-			ch <- Response{
-				Error: line,
-				Mention: "",
-				Lines: bug.Lines,
-			}
+func scanContentURLs(text string, ch chan Response, quit chan int) {
+	wg := sync.WaitGroup{}
+	urls := xurls.Relaxed.FindAllString(text, -1)
+	for _, url := range urls {
+		wg.Add(1)
+		go scanURL(url, ch, &wg)
+	}
+	wg.Wait()
+	quit <- 0
+}
+
+func scanAttachments(attachments []*discordgo.MessageAttachment, ch chan Response, quit chan int) {
+	wg := sync.WaitGroup{}
+	for _, attachment := range attachments {
+		file := attachment.Filename
+		if strings.HasSuffix(file, ".txt") || strings.HasSuffix(file, ".log") || strings.HasSuffix(file, ".json") {
+			wg.Add(1)
+			go scanURL(attachment.URL, ch, &wg)
 		}
 	}
+	wg.Wait()
+	quit <- 0
 }
 
 func scan(scanner *bufio.Scanner, ch chan Response) {
@@ -79,32 +98,25 @@ func scan(scanner *bufio.Scanner, ch chan Response) {
 	}
 }
 
-func scanContent(text string, ch chan Response, quit chan int) {
-	reader := strings.NewReader(text)
-	scanner := bufio.NewScanner(reader)
-	scan(scanner, ch)
-	quit <- 0
+func scanURL(url string, ch chan Response, wg *sync.WaitGroup)  {
+	defer wg.Done()
+
+	resp, err := http.Get(url)
+	if err == nil {
+		scanner := bufio.NewScanner(resp.Body)
+		scan(scanner, ch)
+	}
 }
 
-func scanContentURLs(text string, ch chan Response, quit chan int) {
-	urls := xurls.Relaxed.FindAllString(text, -1)
-	for _, url := range urls {
-		resp, err := http.Get(url)
-		if err == nil {
-			scanner := bufio.NewScanner(resp.Body)
-			scan(scanner, ch)
+func checkLine(line string, ch chan Response) {
+	bugs := getBugs()
+	for _, bug := range bugs {
+		if strings.Contains(line, bug.Error) {
+			ch <- Response{
+				Error: line,
+				Mention: "",
+				Lines: bug.Lines,
+			}
 		}
 	}
-	quit <- 0
-}
-
-func scanAttachments(attachments []*discordgo.MessageAttachment, ch chan Response, quit chan int) {
-	for _, attachment := range attachments {
-		resp, err := http.Get(attachment.URL)
-		if err == nil {
-			scanner := bufio.NewScanner(resp.Body)
-			scan(scanner, ch)
-		}
-	}
-	quit <- 0
 }
