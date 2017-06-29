@@ -6,7 +6,7 @@ layout: default
 ## Assigning RAM
 If your game is running out of memory, you may need to assign more RAM in your launcher's options.
 #### Mojang Launcher
-<video src="./assets/mojang-jvm-args.mp4" width="320" height="200" controls preload></video>
+<video src="assets/mojang-jvm-args.mp4" width="320" height="200" controls preload></video>
 // TODO: instructions on setting JVM args in the mojang launcher
 #### Modpack Launcher
 // TODO: instructions on setting JVM args in the modpack launcher
