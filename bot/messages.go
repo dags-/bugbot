@@ -16,9 +16,14 @@ type Bug struct {
 }
 
 type Response struct {
-	Error   string
-	Mention string
-	Lines   []string
+	Error  string
+	Source string
+	Lines  []string
+}
+
+type Result struct {
+	Mention   string
+	Responses []Response
 }
 
 const beepboop = ":regional_indicator_b::regional_indicator_e::regional_indicator_e::regional_indicator_p: :robot: :regional_indicator_b::regional_indicator_o::regional_indicator_o::regional_indicator_p:"
@@ -32,13 +37,12 @@ func react(s *discordgo.Session, m *discordgo.MessageCreate) (string, bool) {
 	return "", false
 }
 
-func scanMessage(msg *discordgo.MessageCreate) (Response, bool) {
-	var empty Response
+func scanMessage(msg *discordgo.MessageCreate) (Result, bool) {
+	var result Result
 
 	count := 3
-
-	quit := make(chan int, count)
-	ch := make(chan Response, 3)
+	quit := make(chan int)
+	ch := make(chan Response)
 
 	go scanContent(msg.Content, ch, quit)
 	go scanContentURLs(msg.Content, ch, quit)
@@ -46,24 +50,25 @@ func scanMessage(msg *discordgo.MessageCreate) (Response, bool) {
 
 	for {
 		select {
-		case first := <-ch:
-			first.Mention = msg.Author.Mention()
-			return first, true
+		case resp := <-ch:
+			result.Mention = msg.Author.Mention()
+			result.Responses = append(result.Responses, resp)
+			return result, true
 		case <-quit:
 			count--
 			if count <= 0 {
-				return empty, false
+				return result, false
 			}
 		}
 	}
 
-	return empty, false
+	return result, false
 }
 
 func scanContent(text string, ch chan Response, quit chan int) {
 	reader := strings.NewReader(text)
 	scanner := bufio.NewScanner(reader)
-	scan(scanner, false, ch)
+	scan(scanner, "message", false, ch)
 	quit <- 0
 }
 
@@ -72,7 +77,7 @@ func scanContentURLs(text string, ch chan Response, quit chan int) {
 	urls := xurls.Relaxed.FindAllString(text, -1)
 	for _, url := range urls {
 		wg.Add(1)
-		go scanURL(url, true, ch, &wg)
+		go scanURL(url, url, true, ch, &wg)
 	}
 	wg.Wait()
 	quit <- 0
@@ -84,40 +89,40 @@ func scanAttachments(attachments []*discordgo.MessageAttachment, ch chan Respons
 		file := attachment.Filename
 		if strings.HasSuffix(file, ".txt") || strings.HasSuffix(file, ".log") || strings.HasSuffix(file, ".json") {
 			wg.Add(1)
-			go scanURL(attachment.URL, false, ch, &wg)
+			go scanURL(attachment.URL, file, false, ch, &wg)
 		}
 	}
 	wg.Wait()
 	quit <- 0
 }
 
-func scan(scanner *bufio.Scanner, parseHtml bool, ch chan Response) {
+func scan(scanner *bufio.Scanner, source string, parseHtml bool, ch chan Response) {
 	for scanner.Scan() {
 		l := scanner.Text()
 		if parseHtml {
 			l = StripTags(l)
 		}
-		checkLine(l, ch)
+		checkLine(l, source, ch)
 	}
 }
 
-func scanURL(url string, parseHtml bool, ch chan Response, wg *sync.WaitGroup)  {
+func scanURL(url string, source string, parseHtml bool, ch chan Response, wg *sync.WaitGroup) {
 	defer wg.Done()
 
 	resp, err := http.Get(url)
 	if err == nil {
 		scanner := bufio.NewScanner(resp.Body)
-		scan(scanner, parseHtml, ch)
+		scan(scanner, source, parseHtml, ch)
 	}
 }
 
-func checkLine(line string, ch chan Response) {
+func checkLine(line, source string, ch chan Response) {
 	bugs := getBugs()
 	for _, bug := range bugs {
 		if strings.Contains(line, bug.Error) {
 			ch <- Response{
 				Error: line,
-				Mention: "",
+				Source: source,
 				Lines: bug.Lines,
 			}
 		}

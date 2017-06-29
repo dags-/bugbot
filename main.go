@@ -15,6 +15,9 @@ func main() {
 	errs := flag.String("errors", bugs, "Common errors url")
 	flag.Parse()
 
+	t := "MzI5OTE0MzQ0OTAzMTQ3NTIw.DDaYRw.xIc3HD7QWHuTp4UXWKpf29yV_BE"
+	token = &t
+
 	if *token == "" {
 		fmt.Println("No token provided")
 		return

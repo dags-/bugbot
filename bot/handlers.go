@@ -7,8 +7,7 @@ import (
 	"bytes"
 )
 
-var templ = "{{.Mention}}\n\n**Beep boop - common problem detected!**\n\n**Error:**\n```{{.Error}}```\n\n**Solution:**\n{{range .Lines}}{{.}}\n{{end}}"
-var message = template.Must(template.New("root").Parse(templ))
+var message = template.Must(template.ParseFiles("bot/response.html"))
 
 func onReady(s *discordgo.Session, m *discordgo.Ready) {
 	s.UpdateStatus(0, "online")
