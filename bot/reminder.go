@@ -8,7 +8,7 @@ import (
 )
 
 func remind(s *discordgo.Session) {
-	sleep := time.Duration(15) * time.Minute
+	sleep := time.Duration(30) * time.Minute
 	for {
 		for _, guild := range s.State.Guilds {
 			remindGuild(s, guild)
@@ -19,9 +19,12 @@ func remind(s *discordgo.Session) {
 }
 
 func remindGuild(s *discordgo.Session, guild *discordgo.Guild) {
-	for _, ch := range guild.Channels {
-		if strings.ToLower(ch.Name) == "support" {
-			remindChannel(s, ch)
+	channels, err := s.GuildChannels(guild.ID)
+	if err == nil {
+		for _, ch := range channels {
+			if strings.ToLower(ch.Name) == "support" {
+				remindChannel(s, ch)
+			}
 		}
 	}
 }
@@ -31,9 +34,13 @@ func remindChannel(s *discordgo.Session, ch *discordgo.Channel)  {
 		return
 	}
 
-	history, err := s.ChannelMessages(ch.ID, 20, ch.LastMessageID, "", "")
+	history, err := s.ChannelMessages(ch.ID, 20, "", "", "")
 	if err != nil {
 		fmt.Println(err)
+		return
+	}
+
+	if len(history) == 0 {
 		return
 	}
 
