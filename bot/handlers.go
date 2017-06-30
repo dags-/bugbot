@@ -5,12 +5,15 @@ import (
 	"strings"
 	"text/template"
 	"bytes"
+	"fmt"
 )
 
 var message = template.Must(template.ParseFiles("bot/response.html"))
 
 func onReady(s *discordgo.Session, m *discordgo.Ready) {
+	fmt.Println("Bot ready!")
 	s.UpdateStatus(0, "online")
+	go remind(s)
 }
 
 func onMessage(s *discordgo.Session, m *discordgo.MessageCreate) {

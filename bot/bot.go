@@ -18,7 +18,7 @@ func Start(token, url string) {
 	dg.AddHandler(onMessage)
 	dg.AddHandler(onReady)
 
-	fmt.Println("Bot starting...")
+	fmt.Println("Bot opening connection...")
 
 	err = dg.Open()
 	if err != nil {
