@@ -16,9 +16,6 @@
       <header>
         <h1>{{ site.title | default: site.github.repository_name }}</h1>
         <p>{{ site.description | default: site.github.project_tagline }}</p>
-
-        <a href="http://ardacraft.github.io/help">Home</a>
-        <br>
         
         {% for p in site.html_pages %}
             <a href="{{ p.id }}">{{ p.title }}</a>
