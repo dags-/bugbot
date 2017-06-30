@@ -20,8 +20,8 @@
         <a href="http://ardacraft.github.io/help">Home</a>
         <br>
         
-        {% for p in site.pages %}
-            <a href="{{ p.url }}">Test: {{ p.title }}</a>
+        {% for p in site.html_pages %}
+            <a href="{{ p.id }}">{{ p.title }}</a>
             <br>
         {% endfor %}
 
