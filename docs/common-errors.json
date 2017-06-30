@@ -7,7 +7,7 @@
       "Download and install the latest **64bit** Java for your operating system here:",
       "http://www.oracle.com/technetwork/java/javase/downloads/jre8-downloads-2133155.html",
       "",
-      "More help: https://bugbot.dags.me/help"
+      "More help: https://ardacraft.github.io/help"
     ]
   },
   {
@@ -19,7 +19,7 @@
       "2. If that fails, try download and install **64bit** Java from the link below:",
       "http://www.oracle.com/technetwork/java/javase/downloads/jre8-downloads-2133155.html",
       "",
-      "More help: https://bugbot.dags.me/help"
+      "More help: https://ardacraft.github.io/help"
     ]
   },
   {
@@ -28,7 +28,7 @@
       "This means Java ran out of ram. You can fix it by assigning more ram to your game.",
       "2GB is the recommended minimum amount.",
       "",
-      "More help: https://bugbot.dags.me/help"
+      "More help: https://ardacraft.github.io/help"
     ]
   },
   {
@@ -39,7 +39,7 @@
       "- NVIDIA: http://www.nvidia.com/Download/index.aspx",
       "- AMD: http://support.amd.com/en-us/download",
       "",
-      "More help: https://bugbot.dags.me/help"
+      "More help: https://ardacraft.github.io/help"
     ]
   }
 ]
