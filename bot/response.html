@@ -1,12 +1,12 @@
 {{.Mention}}
 {{range .Responses}}
-**Beep boop - common problem detected!**
+**Beep boop - {{.Title}}**
 
 **Error:**
 ```{{.Error}}```
 _Source: {{.Source}}_
 
-**Solution:**
+**Response:**
 {{range .Lines}}{{.}}
 {{end}}
 {{end}}

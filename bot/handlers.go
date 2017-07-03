@@ -28,14 +28,15 @@ func onMessage(s *discordgo.Session, m *discordgo.MessageCreate) {
 
 	s.ChannelTyping(m.ChannelID)
 
-	if react, ok := react(s, m); ok {
+	if react, ok := handleReactions(s, m); ok {
 		s.ChannelMessageSend(m.ChannelID, react)
 	}
 
-	if response, ok := scanMessage(m); ok {
+	if response, ok := handleMessage(m); ok {
 		buf := bytes.Buffer{}
 		if err := message.Execute(&buf, response); err == nil {
 			s.ChannelMessageSend(m.ChannelID, buf.String())
+			return
 		}
 	}
 }

@@ -25,7 +25,7 @@ func main() {
 	bot.Start(*token, *errs)
 }
 
-func handleStop()  {
+func handleStop() {
 	scanner := bufio.NewScanner(os.Stdin)
 	for scanner.Scan() {
 		if scanner.Text() == "stop" {
