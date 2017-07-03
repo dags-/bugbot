@@ -12,9 +12,10 @@ import (
 	"io/ioutil"
 	"math/rand"
 	"regexp"
+	"encoding/json"
 )
 
-var stackRegexp = regexp.MustCompile(".*?Exception.+?[\n](\\s(at.+)[\n])")
+var traceMatcher = regexp.MustCompile("(.*?Exception.+?[\n])?(\\sat (.+)[:])")
 
 const beepboop = ":regional_indicator_b::regional_indicator_e::regional_indicator_e::regional_indicator_p: :robot: :regional_indicator_b::regional_indicator_o::regional_indicator_o::regional_indicator_p:"
 
@@ -35,6 +36,10 @@ type Result struct {
 	Responses []Response
 }
 
+type GithubSearch struct {
+	Total int `json:"total_count"`
+}
+
 func handleReactions(s *discordgo.Session, m *discordgo.MessageCreate) (string, bool) {
 	name := strings.ToLower(s.State.User.Username)
 	text := strings.ToLower(m.Content)
@@ -45,24 +50,26 @@ func handleReactions(s *discordgo.Session, m *discordgo.MessageCreate) (string, 
 }
 
 func handleMessage(m *discordgo.MessageCreate) (Result, bool) {
-	fin := make(chan bool)
-	ch := make(chan Response)
+	mainFin := make(chan bool)
+	mainCh := make(chan Response)
 
-	go handleContent(m, true, ch, fin)
-	go handleURLS(m, true, ch, fin)
-	go handleAttachments(m, true, ch, fin)
+	searchFin := make(chan bool)
+	searchCh := make(chan Response)
 
-	result, ok := handleResponses(ch, fin, 3)
-	if ok {
+	go handleContent(m, true, mainCh, mainFin)
+	go handleURLS(m, true, mainCh, mainFin)
+	go handleAttachments(m, true, mainCh, mainFin)
+	go handleContent(m, false, searchCh, searchFin)
+	go handleURLS(m, false, searchCh, searchFin)
+	go handleAttachments(m, false, searchCh, searchFin)
+
+	if result, ok := handleResponses(mainCh, mainFin, 3); ok {
+		close(searchFin)
+		close(searchCh)
 		return result, true
 	}
 
-	// slower
-	go handleContent(m, false, ch, fin)
-	go handleURLS(m, false, ch, fin)
-	go handleAttachments(m, false, ch, fin)
-
-	return handleResponses(ch, fin, 3)
+	return handleResponses(searchCh, searchFin, 3)
 }
 
 func handleResponses(ch chan Response, fin chan bool, count int) (Result, bool) {
@@ -183,23 +190,70 @@ func urlTrace(url, src string, escape bool, ch chan Response, wg *sync.WaitGroup
 }
 
 func stackTrace(content, src string, ch chan Response) {
-	matches := stackRegexp.FindAllStringSubmatch(content, -1)
+	// number of lines to match in the stacktrace to search - more lines == more specific search .: less results
+	lines := 3
+
+	var trace []string
+
+	matches := traceMatcher.FindAllStringSubmatch(content, lines)
 	if len(matches) > 0 {
-		grps := matches[0]
-		if len(grps) >= 3 {
-			query := grps[2]
-			search := fmt.Sprintf("https://google.com?#q=%s", url.QueryEscape(query))
-			ch <- Response{
-				Title: "unknown error!",
-				Error: query,
-				Source: src,
-				Lines: []string{
-					"I have not learnt about this error yet :[",
-					"It might have been reported elsewhere online:",
-					"",
-					search,
-				},
+		for _, line := range matches {
+			if len(line) >= 4 {
+				trace = append(trace, `"` + line[3] + `"`)
 			}
 		}
+	}
+
+	if len(trace) == 0 {
+		return
+	}
+
+	query := url.QueryEscape(strings.Join(trace, "+"))
+	address := fmt.Sprintf("https://google.com?#q=%s", query)
+
+	title := "unkown error!"
+	line := strings.Trim(trace[0], `"`) + "..."
+	description := getDescription(address, 0)
+
+	if resp, err := http.Get(fmt.Sprintf("https://api.github.com/search/issues?q=%s", query)); err == nil {
+		var search GithubSearch
+		err := json.NewDecoder(resp.Body).Decode(&search)
+
+		if err == nil && search.Total > 0 {
+			title = "detected similar errors online"
+			address = fmt.Sprintf("https://github.com/search?type=Issues&q=%s", query)
+			description = getDescription(address, search.Total)
+		}
+	}
+
+	ch <- Response{
+		Title: title,
+		Error: line,
+		Source: src,
+		Lines: description,
+	}
+}
+
+func getDescription(address string, total int) ([]string) {
+	if total == 0 {
+		return []string {
+			"Sorry, I have not learnt about this error yet :[",
+			"You might be able to find more about it online:",
+			"",
+			address,
+		}
+	}
+
+	second := "I *have*, however, found a similar issue reported online."
+	if total > 1 {
+		second = "I *have*, however, found similar issues reported online."
+	}
+
+	return []string {
+		"Sorry, I have not learnt about this error yet :[",
+		second,
+		"You may be able to find a solution here:",
+		"",
+		address,
 	}
 }
