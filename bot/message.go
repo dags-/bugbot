@@ -27,27 +27,32 @@ func handleMessage(m *discordgo.MessageCreate) (Result, bool) {
 	results := merge(done, w1.results, w2.results, w3.results)
 	lookups := merge(done, w1.lookups, w2.lookups, w3.lookups)
 
-	result := newResult(m)
-	lookup := newResult(m)
-
 	for r := range results {
-		result.Responses = append(result.Responses, r)
-	}
-
-	for l := range lookups {
-		lookup.Responses = append(lookup.Responses, l)
-	}
-
-	if len(result.Responses) > 0 {
+		result := Result{
+			Mention: m.Author.Mention(),
+			Responses: []Response{r},
+		}
 		return result, true
 	}
 
-	if len(lookup.Responses) > 0 {
+	for l := range lookups {
+		lookup := Result{
+			Mention: m.Author.Mention(),
+			Responses: []Response{l},
+		}
 		return lookup, true
 	}
 
 	var empty Result
 	return empty, false
+}
+
+func newWorker(done chan interface{}) (*Worker) {
+	return &Worker{
+		done: done,
+		results: make(chan Response),
+		lookups: make(chan Response),
+	}
 }
 
 func merge(done chan interface{}, in ...<- chan Response) (<- chan Response) {

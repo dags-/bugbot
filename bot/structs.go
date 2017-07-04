@@ -1,7 +1,5 @@
 package bot
 
-import "github.com/bwmarrin/discordgo"
-
 type Bug struct {
 	Error string `json:"error"`
 	Lines []string `json:"lines"`
@@ -27,16 +25,4 @@ type Worker struct {
 	done    chan interface{}
 	results chan Response
 	lookups chan Response
-}
-
-func newWorker(done chan interface{}) (*Worker) {
-	return &Worker{
-		done: done,
-		results: make(chan Response),
-		lookups: make(chan Response),
-	}
-}
-
-func newResult(m * discordgo.MessageCreate) (Result) {
-	return Result{Mention: m.Author.Mention()}
 }
