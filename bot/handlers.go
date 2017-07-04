@@ -4,8 +4,8 @@ import (
 	"github.com/bwmarrin/discordgo"
 	"strings"
 	"text/template"
-	"bytes"
 	"fmt"
+	"bytes"
 )
 
 var message = template.Must(template.ParseFiles("bot/response.html"))
@@ -28,15 +28,13 @@ func onMessage(s *discordgo.Session, m *discordgo.MessageCreate) {
 
 	s.ChannelTyping(m.ChannelID)
 
-	if react, ok := handleReactions(s, m); ok {
-		s.ChannelMessageSend(m.ChannelID, react)
-	}
-
 	if response, ok := handleMessage(m); ok {
 		buf := bytes.Buffer{}
 		if err := message.Execute(&buf, response); err == nil {
 			s.ChannelMessageSend(m.ChannelID, buf.String())
 			return
+		} else {
+			fmt.Println(err)
 		}
 	}
 }
