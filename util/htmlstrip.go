@@ -1,4 +1,4 @@
-package bot
+package util
 
 // https://github.com/golang/go/issues/5884
 
