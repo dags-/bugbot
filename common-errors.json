@@ -1,0 +1,36 @@
+[
+  {
+    "error": "The specified size exceeds the maximum representable size",
+    "lines": [
+      "This error means that your version of Java is not capable of using the amount of ram set in your launcher options - usually because you are using 32bit Java.",
+      "Download and install the latest **64bit** Java for your operating system here:",
+      "http://www.oracle.com/technetwork/java/javase/downloads/jre8-downloads-2133155.html"
+    ]
+  },
+  {
+    "error": "Could not reserve enough space",
+    "lines": [
+      "This error means Java could not use the amount of ram specified.",
+      "This may be because you have 32bit Java installed, or because you have too many applications open.",
+      "1. First try closing any unecessary apps, or reduce the amount of ram assigned to minecraft",
+      "2. If that fails, try download and install **64bit** Java from the link below:",
+      "http://www.oracle.com/technetwork/java/javase/downloads/jre8-downloads-2133155.html"
+    ]
+  },
+  {
+    "error": "OutOfMemoryError",
+    "lines": [
+      "This means Java ran out of ram. You can fix it by assigning more ram to your game.",
+      "2GB is the recommended minimum amount."
+    ]
+  },
+  {
+    "error": "Pixel format not accelerated",
+    "lines": [
+      "This error is caused by bad/old graphics drivers.",
+      "Download and install the latest drivers for your graphics card from:",
+      "- NVIDIA: http://www.nvidia.com/Download/index.aspx",
+      "- AMD: http://support.amd.com/en-us/download"
+    ]
+  }
+]
