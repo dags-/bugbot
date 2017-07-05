@@ -1,22 +1,22 @@
-package bot
+package message
 
 import (
-	"github.com/bwmarrin/discordgo"
 	"sync"
 	"strings"
 	"bufio"
-	"github.com/mvdan/xurls"
 	"net/http"
 	"regexp"
 	"net/url"
 	"fmt"
 	"encoding/json"
 	"io/ioutil"
+	"github.com/dags-/bugbot/util"
+	"github.com/dags-/bugbot/issue"
 )
 
 var stackMatcher = regexp.MustCompile("(.*?Exception.+?[\n])?(\\sat (.+)[:])")
 
-func handleMessage(m *discordgo.MessageCreate) (Result, bool) {
+func Process(m *Message) (Result, bool) {
 	done := make(chan interface{})
 	defer close(done)
 
@@ -29,7 +29,7 @@ func handleMessage(m *discordgo.MessageCreate) (Result, bool) {
 
 	for r := range results {
 		result := Result{
-			Mention: m.Author.Mention(),
+			Mention: m.Author,
 			Responses: []Response{r},
 		}
 		return result, true
@@ -37,7 +37,7 @@ func handleMessage(m *discordgo.MessageCreate) (Result, bool) {
 
 	for l := range lookups {
 		lookup := Result{
-			Mention: m.Author.Mention(),
+			Mention: m.Author,
 			Responses: []Response{l},
 		}
 		return lookup, true
@@ -45,14 +45,6 @@ func handleMessage(m *discordgo.MessageCreate) (Result, bool) {
 
 	var empty Result
 	return empty, false
-}
-
-func newWorker(done chan interface{}) (*Worker) {
-	return &Worker{
-		done: done,
-		results: make(chan Response),
-		lookups: make(chan Response),
-	}
 }
 
 func merge(done chan interface{}, in ...<- chan Response) (<- chan Response) {
@@ -84,93 +76,8 @@ func merge(done chan interface{}, in ...<- chan Response) (<- chan Response) {
 	return out
 }
 
-func contentWorker(done chan interface{}, m *discordgo.MessageCreate) (*Worker) {
-	worker := newWorker(done)
 
-	go func() {
-		defer close(worker.lookups)
-		defer close(worker.results)
-
-		wg := sync.WaitGroup{}
-		wg.Add(2)
-
-		go func() {
-			defer wg.Done()
-			scanner := bufio.NewScanner(strings.NewReader(m.Content))
-			scan(worker, scanner, false, "common error detected!", "message")
-		}()
-
-		go func() {
-			defer wg.Done()
-			lookupText(worker, m.Content, "message")
-		}()
-
-		wg.Wait()
-	}()
-
-	return worker
-}
-
-func urlWorker(done chan interface{}, m *discordgo.MessageCreate) (*Worker) {
-	worker := newWorker(done)
-
-	go func() {
-		defer close(worker.lookups)
-		defer close(worker.results)
-
-		urls := xurls.Relaxed.FindAllString(m.Content, -1)
-		wg := sync.WaitGroup{}
-		wg.Add(len(urls) * 2)
-
-		for _, u := range urls {
-			go func() {
-				defer wg.Done()
-				scanURL(worker, u, true, "common error detected!", u)
-			}()
-			go func() {
-				defer wg.Done()
-				lookupURL(worker, u, true, u)
-			}()
-		}
-
-		wg.Wait()
-	}()
-
-	return worker
-}
-
-func attachmentWorker(done chan interface{}, m *discordgo.MessageCreate) (*Worker) {
-	worker := newWorker(done)
-
-	go func() {
-		defer close(worker.lookups)
-		defer close(worker.results)
-
-		attachments := m.Attachments
-		wg := sync.WaitGroup{}
-		wg.Add(len(attachments) * 2)
-
-		for _, a := range attachments {
-			u := a.URL
-			src := a.Filename
-			go func() {
-				defer wg.Done()
-				scanURL(worker, u, false, "common error detected!", src)
-			}()
-
-			go func() {
-				defer wg.Done()
-				lookupURL(worker, u, false, src)
-			}()
-		}
-
-		wg.Wait()
-	}()
-
-	return worker
-}
-
-func scanURL(worker *Worker, url string, stripTags bool, title, source string) {
+func processURL(worker *worker, url string, stripTags bool, title, source string) {
 	resp, err := http.Get(url)
 
 	if err != nil {
@@ -178,44 +85,43 @@ func scanURL(worker *Worker, url string, stripTags bool, title, source string) {
 	}
 
 	scanner := bufio.NewScanner(resp.Body)
-	scan(worker, scanner, stripTags, title, source)
+	processScanner(worker, scanner, stripTags, title, source)
 }
 
-func scan(worker *Worker, scanner *bufio.Scanner, parseHtml bool, title, source string) {
-	bugs := getBugs()
-
+func processScanner(worker *worker, scanner *bufio.Scanner, parseHtml bool, title, source string) {
 	for scanner.Scan() {
 		text := scanner.Text()
 		if parseHtml {
-			text = StripTags(text)
+			text = util.StripTags(text)
 		}
 
-		if scanLine(worker, text, bugs, title, source) {
+		if processLine(worker, text, title, source) {
 			return
 		}
 	}
 }
 
-func scanLine(worker *Worker, line string, bugs []Bug, title, source string) (bool) {
-	for _, bug := range bugs {
-		if strings.Contains(line, bug.Error) {
+func processLine(worker *worker, line string, title, source string) (bool) {
+	result := issue.ForEach(func(issue issue.Issue) (bool) {
+		if strings.Contains(line, issue.Match) {
 			select {
 			case worker.results <- Response{
 				Title: title,
 				Source: source,
 				Error: line,
-				Lines: bug.Lines,
+				Lines: issue.Description,
 			}:
 				return true
 			case <-worker.done:
 				return true
 			}
 		}
-	}
-	return false
+		return false
+	})
+	return result
 }
 
-func lookupURL(worker *Worker, url string, stripTags bool, source string) {
+func lookupURL(worker *worker, url string, stripTags bool, source string) {
 	resp, err := http.Get(url)
 	if err != nil {
 		return
@@ -228,13 +134,13 @@ func lookupURL(worker *Worker, url string, stripTags bool, source string) {
 
 	text := string(data)
 	if stripTags {
-		text = StripTags(text)
+		text = util.StripTags(text)
 	}
 
 	lookupText(worker, text, source)
 }
 
-func lookupText(worker *Worker, text, source string) {
+func lookupText(worker *worker, text, source string) {
 	var trace []string
 
 	matches := stackMatcher.FindAllStringSubmatch(text, 3)
@@ -250,6 +156,10 @@ func lookupText(worker *Worker, text, source string) {
 		return
 	}
 
+	lookupStackTrace(worker, trace, source)
+}
+
+func lookupStackTrace(worker *worker, trace []string, source string) {
 	query := url.QueryEscape(strings.Join(trace, "+"))
 	address := fmt.Sprintf("https://google.com?#q=%s", query)
 
