@@ -7,29 +7,33 @@ import (
 	"github.com/dags-/bugbot/issue"
 )
 
-func Start(token, devId string) {
+const teacher = "bugbot-teacher"
+const channel = "support"
+
+func Start(token string) {
 	go issue.Init()
 
-	dg, err := discordgo.New("Bot " + token)
+	s, err := discordgo.New("Bot " + token)
 	if err != nil {
 		fmt.Println("error creating Discord session,", err)
 		return
 	}
 
-	dg.AddHandler(onMessage)
-	dg.AddHandler(onReady)
+	s.AddHandler(onMessage)
+	s.AddHandler(onReady)
+	s.AddHandler(onJoin)
+	go remind(s)
 
 	fmt.Println("Bot opening connection...")
 
-	err = dg.Open()
+	err = s.Open()
 	if err != nil {
 		fmt.Println("error opening connection,", err)
 		return
 	}
 
-	devID = devId
 	sc := make(chan os.Signal, 1)
 
 	<-sc
-	dg.Close()
+	s.Close()
 }

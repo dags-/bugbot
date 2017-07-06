@@ -10,11 +10,11 @@ import (
 func remind(s *discordgo.Session) {
 	sleep := time.Duration(30) * time.Minute
 	for {
+		time.Sleep(sleep)
+
 		for _, guild := range s.State.Guilds {
 			remindGuild(s, guild)
 		}
-
-		time.Sleep(sleep)
 	}
 }
 
