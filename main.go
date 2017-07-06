@@ -10,7 +10,6 @@ import (
 
 func main() {
 	token := flag.String("token", "", "Auth token")
-	devId := flag.String("dev", "dags#8913", "Developer id")
 	flag.Parse()
 
 	if *token == "" {
@@ -20,7 +19,7 @@ func main() {
 
 	go handleStop()
 
-	bot.Start(*token, *devId)
+	bot.Start(*token)
 }
 
 func handleStop() {

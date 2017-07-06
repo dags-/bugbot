@@ -12,9 +12,12 @@ import (
 	"io/ioutil"
 	"github.com/dags-/bugbot/util"
 	"github.com/dags-/bugbot/issue"
+	"golang.org/x/text/search"
+	"golang.org/x/text/language"
 )
 
 var stackMatcher = regexp.MustCompile("(.*?Exception.+?[\n])?(\\sat (.+)[:])")
+var lineMatcher = search.New(language.English, search.IgnoreCase)
 
 func Process(m *Message) (Result, bool) {
 	done := make(chan interface{})
@@ -76,7 +79,6 @@ func merge(done chan interface{}, in ...<- chan Response) (<- chan Response) {
 	return out
 }
 
-
 func processURL(worker *worker, url string, stripTags bool, title, source string) {
 	resp, err := http.Get(url)
 
@@ -103,7 +105,7 @@ func processScanner(worker *worker, scanner *bufio.Scanner, parseHtml bool, titl
 
 func processLine(worker *worker, line string, title, source string) (bool) {
 	result := issue.ForEach(func(issue issue.Issue) (bool) {
-		if strings.Contains(line, issue.Match) {
+		if contains(line, issue.Match) {
 			select {
 			case worker.results <- Response{
 				Title: title,
@@ -118,7 +120,13 @@ func processLine(worker *worker, line string, title, source string) (bool) {
 		}
 		return false
 	})
+
 	return result
+}
+
+func contains(s1, sub1 string) (bool) {
+	index, _ := lineMatcher.IndexString(s1, sub1)
+	return index != -1
 }
 
 func lookupURL(worker *worker, url string, stripTags bool, source string) {
@@ -168,13 +176,13 @@ func lookupStackTrace(worker *worker, trace []string, source string) {
 	description := getDescription(address, 0)
 
 	if resp, err := http.Get(fmt.Sprintf("https://api.github.com/search/issues?q=%s", query)); err == nil {
-		var search GithubSearch
-		err := json.NewDecoder(resp.Body).Decode(&search)
+		var srch GithubSearch
+		err := json.NewDecoder(resp.Body).Decode(&srch)
 
-		if err == nil && search.Total > 0 {
+		if err == nil && srch.Total > 0 {
 			title = "detected similar errors online"
 			address = fmt.Sprintf("https://github.com/search?type=Issues&q=%s", query)
-			description = getDescription(address, search.Total)
+			description = getDescription(address, srch.Total)
 		}
 	}
 
