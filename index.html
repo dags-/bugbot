@@ -9,6 +9,7 @@
         margin: auto auto;
         text-align: center;
         background-color: #FAFAFA;
+        font-family: sans-serif;
     }
     img {
         width: 275px;
@@ -19,7 +20,6 @@
         line-height: 55px;
         font-size: large;
         margin: 30px auto;
-        font-family: sans-serif;
         display: block;
         color: #FFFFFF;
         background-color: #4286f4;
@@ -30,12 +30,25 @@
     .btn:active {
         box-shadow: 1px 1px 2px 1px rgba(0,0,0,0.25) inset;
     }
+    sub {
+        text-align: left;
+        color: #999999;
+    }
     </style>
 </head>
 <div class="container">
     <img src="robot.jpg" align="middle">
-    <a class="btn" href="https://discordapp.com/api/oauth2/authorize?client_id=328816047488761858&scope=bot&permissions=0x10000010" target="_blank">
+    <a class="btn"
+       href="https://discordapp.com/api/oauth2/authorize?client_id=328816047488761858&scope=bot&permissions=0x10000010"
+       target="_blank">
         Take me to your leader!
     </a>
+    <sub>
+        Permissions:
+        <ul style="list-style-type:circle">
+            <li><b>Manage Roles</b> - used to add and read the 'bugbot-teacher' role to your guild.</li>
+            <li><b>Manage Channels</b> - used to add a #support channel to your guild.</li>
+        </ul>
+    </sub>
 </div>
 </html>
