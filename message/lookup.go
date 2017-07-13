@@ -11,7 +11,7 @@ import (
 )
 
 var exceptionMatcher = regexp.MustCompile(`.+?Exception:.+?`)
-var traceMatcher = regexp.MustCompile(`\sat\s(.+\(.+\))`)
+var traceMatcher = regexp.MustCompile(`\sat\s(.+\(.+):`)
 
 func lookupURL(worker *worker, url string, stripTags bool, source string) {
 	resp, err := http.Get(url)
@@ -32,15 +32,15 @@ func lookupScanner(worker *worker, scanner *util.LogScanner, source string) {
 			trace := make([]string, lines)
 			trace[0] = line
 			for i := 1; scanner.Scan() && i <= lines; i++ {
+				if i >= lines {
+					lookupStackTrace(worker, trace, source)
+					return
+				}
+
 				line = scanner.Text()
 				groups := traceMatcher.FindAllStringSubmatch(line, -1)
 				if len(groups) == 0 || len(groups[0]) < 2 {
 					break
-				}
-
-				if i >= lines {
-					lookupStackTrace(worker, trace, source)
-					return
 				}
 
 				trace[i] = groups[0][1]
@@ -65,7 +65,7 @@ func lookupStackTrace(worker *worker, trace []string, source string) {
 	}
 
 	title := "detected similar errors online"
-	line := strings.Trim(trace[0], `"`) + "..."
+	line := strings.Trim(trace[0], `"`)
 	address = fmt.Sprintf("https://github.com/search?type=Issues&q=%s", query)
 	description := []string{
 		"Sorry, I have not learnt about this error yet :[",
