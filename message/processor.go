@@ -2,21 +2,13 @@ package message
 
 import (
 	"sync"
-	"strings"
-	"bufio"
 	"net/http"
-	"regexp"
-	"net/url"
-	"fmt"
-	"encoding/json"
-	"io/ioutil"
 	"github.com/dags-/bugbot/util"
 	"github.com/dags-/bugbot/issue"
 	"golang.org/x/text/search"
 	"golang.org/x/text/language"
 )
 
-var stackMatcher = regexp.MustCompile("(.*?Exception.+?[\n])?(\\sat (.+)[:])")
 var lineMatcher = search.New(language.English, search.IgnoreCase)
 
 func Process(m *Message) (Result, bool) {
@@ -86,17 +78,13 @@ func processURL(worker *worker, url string, stripTags bool, title, source string
 		return
 	}
 
-	scanner := bufio.NewScanner(resp.Body)
-	processScanner(worker, scanner, stripTags, title, source)
+	scanner := util.NewLogScanner(resp.Body, stripTags)
+	processScanner(worker, scanner, title, source)
 }
 
-func processScanner(worker *worker, scanner *bufio.Scanner, parseHtml bool, title, source string) {
+func processScanner(worker *worker, scanner *util.LogScanner, title, source string) {
 	for scanner.Scan() {
 		text := scanner.Text()
-		if parseHtml {
-			text = util.StripTags(text)
-		}
-
 		if processLine(worker, text, title, source) {
 			return
 		}
@@ -127,97 +115,4 @@ func processLine(worker *worker, line string, title, source string) (bool) {
 func contains(s1, sub1 string) (bool) {
 	index, _ := lineMatcher.IndexString(s1, sub1)
 	return index != -1
-}
-
-func lookupURL(worker *worker, url string, stripTags bool, source string) {
-	resp, err := http.Get(url)
-	if err != nil {
-		return
-	}
-
-	data, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return
-	}
-
-	text := string(data)
-	if stripTags {
-		text = util.StripTags(text)
-	}
-
-	lookupText(worker, text, source)
-}
-
-func lookupText(worker *worker, text, source string) {
-	var trace []string
-
-	matches := stackMatcher.FindAllStringSubmatch(text, 3)
-	if len(matches) > 0 {
-		for _, line := range matches {
-			if len(line) >= 4 {
-				trace = append(trace, `"` + line[3] + `"`)
-			}
-		}
-	}
-
-	if len(trace) == 0 {
-		return
-	}
-
-	lookupStackTrace(worker, trace, source)
-}
-
-func lookupStackTrace(worker *worker, trace []string, source string) {
-	query := url.QueryEscape(strings.Join(trace, "+"))
-	address := fmt.Sprintf("https://google.com?#q=%s", query)
-
-	title := "unkown error!"
-	line := strings.Trim(trace[0], `"`) + "..."
-	description := getDescription(address, 0)
-
-	if resp, err := http.Get(fmt.Sprintf("https://api.github.com/search/issues?q=%s", query)); err == nil {
-		var srch GithubSearch
-		err := json.NewDecoder(resp.Body).Decode(&srch)
-
-		if err == nil && srch.Total > 0 {
-			title = "detected similar errors online"
-			address = fmt.Sprintf("https://github.com/search?type=Issues&q=%s", query)
-			description = getDescription(address, srch.Total)
-		}
-	}
-
-	select {
-	case worker.lookups <- Response{
-		Title: title,
-		Source: source,
-		Error: line,
-		Lines: description,
-	}:
-	case <-worker.done:
-		return
-	}
-}
-
-func getDescription(address string, total int) ([]string) {
-	if total == 0 {
-		return []string{
-			"Sorry, I have not learnt about this error yet :[",
-			"You might be able to find more about it online:",
-			"",
-			address,
-		}
-	}
-
-	second := "I *have*, however, found a similar issue reported online."
-	if total > 1 {
-		second = "I *have*, however, found similar issues reported online."
-	}
-
-	return []string{
-		"Sorry, I have not learnt about this error yet :[",
-		second,
-		"You may be able to find a solution here:",
-		"",
-		address,
-	}
 }

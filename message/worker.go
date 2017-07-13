@@ -2,9 +2,9 @@ package message
 
 import (
 	"sync"
-	"bufio"
 	"strings"
 	"github.com/mvdan/xurls"
+	"github.com/dags-/bugbot/util"
 )
 
 func newWorker(done chan interface{}) (*worker) {
@@ -27,13 +27,14 @@ func contentWorker(done chan interface{}, m *Message) (*worker) {
 
 		go func() {
 			defer wg.Done()
-			scanner := bufio.NewScanner(strings.NewReader(m.Content))
-			processScanner(worker, scanner, false, "common error detected!", "message")
+			scanner := util.NewLogScanner(strings.NewReader(m.Content), false)
+			processScanner(worker, scanner, "common error detected!", "message")
 		}()
 
 		go func() {
 			defer wg.Done()
-			lookupText(worker, m.Content, "message")
+			scanner := util.NewLogScanner(strings.NewReader(m.Content), false)
+			lookupScanner(worker, scanner, "message")
 		}()
 
 		wg.Wait()
