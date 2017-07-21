@@ -1,9 +1,10 @@
 package message
 
 type Message struct {
-	Author    string
-	Content   string
-	Resources []Resource
+	Author     string
+	Content    string
+	Resources  []Resource
+	Thumbnails []Resource
 }
 
 type Resource struct {

@@ -7,6 +7,10 @@ import (
 	"github.com/dags-/bugbot/issue"
 	"golang.org/x/text/search"
 	"golang.org/x/text/language"
+	"github.com/dags-/bugbot/visionapi"
+	"encoding/json"
+	"bytes"
+	"strings"
 )
 
 var lineMatcher = search.New(language.English, search.IgnoreCase)
@@ -18,9 +22,10 @@ func Process(m *Message) (Result, bool) {
 	w1 := contentWorker(done, m)
 	w2 := urlWorker(done, m)
 	w3 := attachmentWorker(done, m)
+	w4 := embedWorker(done, m)
 
-	results := merge(done, w1.results, w2.results, w3.results)
-	lookups := merge(done, w1.lookups, w2.lookups, w3.lookups)
+	results := merge(done, w1.results, w2.results, w3.results, w4.results)
+	lookups := merge(done, w1.lookups, w2.lookups, w3.lookups, w4.lookups)
 
 	for r := range results {
 		result := Result{
@@ -80,6 +85,30 @@ func processURL(worker *worker, url string, stripTags bool, title, source string
 
 	scanner := util.NewLogScanner(resp.Body, stripTags)
 	processScanner(worker, scanner, title, source)
+}
+
+func processImage(worker *worker, url, title, source string) {
+	query := vision.NewQuery(url, vision.TEXT, 1)
+	data, err := json.Marshal(query)
+	if err != nil {
+		return
+	}
+
+	resp, err := http.Post(vision.GetURL(), "json", bytes.NewBuffer(data))
+	if err != nil {
+		return
+	}
+
+	result := vision.Parse(resp.Body)
+	if len(result.Responses) > 0 {
+		response := result.Responses[0]
+		if len(response.Annotations) > 0 {
+			anno := response.Annotations[0]
+			reader := strings.NewReader(anno.Description)
+			scanner := util.NewLogScanner(reader, false)
+			processScanner(worker, scanner, title, source)
+		}
+	}
 }
 
 func processScanner(worker *worker, scanner *util.LogScanner, title, source string) {

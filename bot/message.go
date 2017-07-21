@@ -13,8 +13,8 @@ import (
 var templ = template.Must(template.ParseFiles("response.html"))
 
 func onMessage(s *discordgo.Session, m *discordgo.MessageCreate) {
-	// ignore self
-	if m.Author.ID == s.State.User.ID {
+	// ignore self or bots
+	if m.Author.ID == s.State.User.ID || m.Author.Bot {
 		return
 	}
 
@@ -49,8 +49,12 @@ func convertMessage(m *discordgo.MessageCreate) (*message.Message) {
 	msg.Author = m.Author.Mention()
 	msg.Content = m.Content
 	msg.Resources = make([]message.Resource, len(m.Attachments))
+	msg.Thumbnails = make([]message.Resource, len(m.Embeds))
 	for i, a := range m.Attachments {
 		msg.Resources[i] = message.Resource{Name: a.Filename, URL: a.URL}
+	}
+	for i, e := range m.Embeds {
+		msg.Thumbnails[i] = message.Resource{Name: e.Title, URL: e.Thumbnail.URL}
 	}
 	return msg
 }

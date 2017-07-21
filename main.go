@@ -6,10 +6,12 @@ import (
 	"flag"
 	"bufio"
 	"os"
+	"github.com/dags-/bugbot/visionapi"
 )
 
 func main() {
 	token := flag.String("token", "", "Auth token")
+	visionToken := flag.String("vision", "", "Google vision API token")
 	flag.Parse()
 
 	if *token == "" {
@@ -17,8 +19,13 @@ func main() {
 		return
 	}
 
+	if *visionToken == "" {
+		fmt.Println("No vision api token provided")
+	}
+
 	go handleStop()
 
+	vision.SetToken(*visionToken)
 	bot.Start(*token)
 }
 

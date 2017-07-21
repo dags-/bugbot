@@ -99,3 +99,31 @@ func attachmentWorker(done chan interface{}, m *Message) (*worker) {
 
 	return worker
 }
+
+func embedWorker(done chan interface{}, m *Message) (*worker) {
+	worker := newWorker(done)
+
+	go func() {
+		defer close(worker.lookups)
+		defer close(worker.results)
+
+		thumbnails := m.Thumbnails
+		wg := sync.WaitGroup{}
+		wg.Add(len(thumbnails) * 2)
+
+		for _, t := range thumbnails {
+			go func() {
+				defer wg.Done()
+				processImage(worker, t.URL, "common error detected!", t.Name)
+			}()
+
+			go func() {
+				defer wg.Done()
+			}()
+		}
+
+		wg.Wait()
+	}()
+
+	return worker
+}
