@@ -8,8 +8,6 @@ import (
 	"golang.org/x/text/search"
 	"golang.org/x/text/language"
 	"github.com/dags-/bugbot/visionapi"
-	"encoding/json"
-	"bytes"
 	"strings"
 )
 
@@ -89,22 +87,12 @@ func processURL(worker *worker, url string, stripTags bool, title, source string
 
 func processImage(worker *worker, url, title, source string) {
 	query := vision.NewQuery(url, vision.TEXT, 1)
-	data, err := json.Marshal(query)
-	if err != nil {
-		return
-	}
-
-	resp, err := http.Post(vision.GetURL(), "json", bytes.NewBuffer(data))
-	if err != nil {
-		return
-	}
-
-	result := vision.Parse(resp.Body)
+	result := vision.Post(query)
 	if len(result.Responses) > 0 {
 		response := result.Responses[0]
 		if len(response.Annotations) > 0 {
-			anno := response.Annotations[0]
-			reader := strings.NewReader(anno.Description)
+			annotation := response.Annotations[0]
+			reader := strings.NewReader(annotation.Description)
 			scanner := util.NewLogScanner(reader, false)
 			processScanner(worker, scanner, title, source)
 		}

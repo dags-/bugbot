@@ -49,13 +49,20 @@ func convertMessage(m *discordgo.MessageCreate) (*message.Message) {
 	msg.Author = m.Author.Mention()
 	msg.Content = m.Content
 	msg.Resources = make([]message.Resource, len(m.Attachments))
-	msg.Thumbnails = make([]message.Resource, len(m.Embeds))
+
 	for i, a := range m.Attachments {
-		msg.Resources[i] = message.Resource{Name: a.Filename, URL: a.URL}
+		resource := message.Resource{Name: a.Filename, URL: a.URL}
+		msg.Resources[i] = resource
+		if hasImageExtn(a.Filename) {
+			msg.Thumbnails = append(msg.Thumbnails, resource)
+		}
 	}
-	for i, e := range m.Embeds {
-		msg.Thumbnails[i] = message.Resource{Name: e.Title, URL: e.Thumbnail.URL}
+
+	for _, e := range m.Embeds {
+		resource := message.Resource{Name: e.Title, URL: e.Thumbnail.URL}
+		msg.Thumbnails = append(msg.Thumbnails, resource)
 	}
+
 	return msg
 }
 
@@ -117,4 +124,9 @@ func tryLearn(s *discordgo.Session, m *discordgo.MessageCreate) (string, bool) {
 	response := issue.ParseMD(m.Content)
 	ok := response != ""
 	return response, ok
+}
+
+func hasImageExtn(name string) bool {
+	s := strings.ToLower(name)
+	return strings.HasSuffix(s, ".jpeg") || strings.HasSuffix(s, ".jpg") || strings.HasSuffix(s, ".png")
 }

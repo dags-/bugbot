@@ -1,5 +1,11 @@
 package vision
 
+import (
+	"net/http"
+	"encoding/base64"
+	"io/ioutil"
+)
+
 const TEXT = "TEXT_DETECTION"
 
 type Query struct {
@@ -12,7 +18,8 @@ type Request struct {
 }
 
 type Image struct {
-	Source Source `json:"source"`
+	Content string `json:"content"`
+	Source  Source `json:"source"`
 }
 
 type Source struct {
@@ -25,13 +32,15 @@ type Feature struct {
 }
 
 func NewQuery(url, typ string, max int) Query {
+	req, _ := http.Get(url)
+	b, _ := ioutil.ReadAll(req.Body)
+	s := base64.URLEncoding.EncodeToString(b)
+
 	return Query{
 		Requests: []Request{
 			{
 				Image: Image{
-					Source: Source{
-						URI: url,
-					},
+					Content: s,
 				},
 				Features: []Feature{
 					{
