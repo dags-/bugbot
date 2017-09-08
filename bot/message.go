@@ -25,10 +25,10 @@ func onMessage(s *discordgo.Session, m *discordgo.MessageCreate) {
 		// command has come from owner
 		if m.Author.ID == s.State.User.ID {
 			if ok, id := bugCommand(m.Content); ok {
+				s.ChannelMessageDelete(m.ChannelID, m.ID)
 				target, err := s.State.Message(m.ChannelID, id)
 				if err == nil {
 					processMessage(s, target)
-					s.ChannelMessageDelete(m.ChannelID, m.ID)
 				}
 			}
 		}
