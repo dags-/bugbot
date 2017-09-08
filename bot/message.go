@@ -27,7 +27,6 @@ func onMessage(s *discordgo.Session, m *discordgo.MessageCreate) {
 			if ok, id := bugCommand(m.Content); ok {
 				target, err := s.State.Message(m.ChannelID, id)
 				if err == nil {
-					fmt.Println(target.Content)
 					processMessage(s, target)
 				} else {
 					fmt.Println(err)
