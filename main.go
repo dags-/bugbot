@@ -36,11 +36,7 @@ func main() {
 	go handleStop()
 
 	vision.SetToken(*visionToken)
-	if *user {
-		bot.StartUser(*token)
-	} else {
-		bot.StartBot(*token)
-	}
+	bot.Start(*user, *token)
 }
 
 func handleStop() {
