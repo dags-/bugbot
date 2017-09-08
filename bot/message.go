@@ -12,7 +12,7 @@ import (
 )
 
 var templ = template.Must(template.ParseFiles("response.html"))
-var commandMatcher = regexp.MustCompile("!(\\d+)")
+var commandMatcher = regexp.MustCompile("^!(\\d+)")
 
 func onMessage(s *discordgo.Session, m *discordgo.MessageCreate) {
 	// ignore self or bots
@@ -28,8 +28,7 @@ func onMessage(s *discordgo.Session, m *discordgo.MessageCreate) {
 				target, err := s.State.Message(m.ChannelID, id)
 				if err == nil {
 					processMessage(s, target)
-				} else {
-					fmt.Println(err)
+					s.ChannelMessageDelete(m.ChannelID, m.ID)
 				}
 			}
 		}
