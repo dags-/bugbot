@@ -8,13 +8,36 @@ import (
 	"strings"
 	"bytes"
 	"text/template"
+	"regexp"
 )
 
 var templ = template.Must(template.ParseFiles("response.html"))
+var commandMatcher = regexp.MustCompile("!(\\d+)")
 
 func onMessage(s *discordgo.Session, m *discordgo.MessageCreate) {
 	// ignore self or bots
-	if m.Author.ID == s.State.User.ID || m.Author.Bot {
+	if m.Author.Bot {
+		return
+	}
+
+	// only process commands if in user mod
+	if !s.State.User.Bot {
+		// command has come from owner
+		if m.Author.ID == s.State.User.ID {
+			if ok, id := bugCommand(m.Content); ok {
+				target, err := s.State.Message(m.ChannelID, id)
+				if err == nil {
+					fmt.Println(target.Content)
+					processMessage(s, target)
+				} else {
+					fmt.Println(err)
+				}
+			}
+		}
+		return
+	}
+
+	if m.Author.ID == s.State.User.ID {
 		return
 	}
 
@@ -34,17 +57,33 @@ func onMessage(s *discordgo.Session, m *discordgo.MessageCreate) {
 	}
 
 	// process message and send response if bug detected
+	processMessage(s, m.Message)
+}
+
+func bugCommand(content string) (bool, string) {
+	groups := commandMatcher.FindStringSubmatch(content)
+	if len(groups) == 2 {
+		return true, groups[1]
+	}
+	return false, ""
+}
+
+func processMessage(s *discordgo.Session, m *discordgo.Message) {
+	// process message and send response if bug detected
 	s.ChannelTyping(m.ChannelID)
 	if response, ok := message.Process(convertMessage(m)); ok {
 		buf := bytes.Buffer{}
 		if err := templ.Execute(&buf, response); err == nil {
-			s.ChannelMessageSend(m.ChannelID, buf.String())
+			_, err := s.ChannelMessageSend(m.ChannelID, buf.String())
+			if err != nil {
+				fmt.Println(err)
+			}
 			return
 		}
 	}
 }
 
-func convertMessage(m *discordgo.MessageCreate) (*message.Message) {
+func convertMessage(m *discordgo.Message) (*message.Message) {
 	var msg = &message.Message{}
 	msg.Author = m.Author.Mention()
 	msg.Content = m.Content

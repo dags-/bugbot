@@ -7,5 +7,7 @@ import (
 
 func onReady(s *discordgo.Session, m *discordgo.Ready) {
 	fmt.Println("Bot ready!")
-	s.UpdateStatus(0, "online")
+	if s.State.User.Bot {
+		s.UpdateStatus(0, "online")
+	}
 }

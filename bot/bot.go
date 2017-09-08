@@ -10,13 +10,25 @@ import (
 const teacher = "bugbot-teacher"
 const channel = "support"
 
-func Start(token string) {
+func StartUser(token string) {
+	start("", token)
+}
+
+func StartBot(token string) {
+	start("bot", token)
+}
+
+func start(bot, token string) {
 	go issue.Init()
 
-	s, err := discordgo.New("Bot " + token)
+	s, err := discordgo.New(bot + token)
 	if err != nil {
 		fmt.Println("error creating Discord session,", err)
 		return
+	}
+
+	if bot == "" {
+		s.State.MaxMessageCount = 9999
 	}
 
 	s.AddHandler(onMessage)
@@ -36,4 +48,13 @@ func Start(token string) {
 
 	<-sc
 	s.Close()
+}
+
+func GetUserToken(email, password string) (*string, error) {
+	s, e := discordgo.New(email, password)
+	t := ""
+	if e == nil {
+		t = s.Token
+	}
+	return &t, e
 }
