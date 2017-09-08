@@ -15,7 +15,7 @@ func StartUser(token string) {
 }
 
 func StartBot(token string) {
-	start("bot", token)
+	start("bot ", token)
 }
 
 func start(bot, token string) {
