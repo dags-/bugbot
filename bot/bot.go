@@ -15,7 +15,7 @@ func StartUser(token string) {
 }
 
 func StartBot(token string) {
-	start("bot ", token)
+	start("Bot ", token)
 }
 
 func start(bot, token string) {
@@ -37,8 +37,8 @@ func start(bot, token string) {
 	go remind(s)
 
 	fmt.Println("Bot opening connection...")
-
 	err = s.Open()
+
 	if err != nil {
 		fmt.Println("error opening connection,", err)
 		return
