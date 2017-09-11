@@ -11,4 +11,7 @@ func onReady(s *discordgo.Session, m *discordgo.Ready) {
 		fmt.Println("Setting bot status: online")
 		s.UpdateStatus(0, "online")
 	}
+
+	fmt.Println("Loading channels")
+	loadChannels(s.State.User.ID)
 }

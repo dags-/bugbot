@@ -26,12 +26,17 @@ func onMessage(s *discordgo.Session, m *discordgo.MessageCreate) {
 		return
 	}
 
-	if s.State.User.ID == m.Author.ID && len(m.Mentions) > 0 {
-		return
+	if s.State.User.ID == m.Author.ID {
+		if s.State.User.Bot {
+			return
+		}
+		if len(m.Mentions) > 0 {
+			return
+		}
 	}
 
 	// user has tagged the bot and has 'bugbot-teacher' role
-	if mentionsBot(s, m) && canTeach(s, m) {
+	if s.State.User.Bot && mentionsBot(s, m) && canTeach(s, m) {
 		s.ChannelTyping(m.ChannelID)
 		if response, ok := tryLearn(s, m); ok {
 			s.ChannelMessageSend(m.ChannelID, response)

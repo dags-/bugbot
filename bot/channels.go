@@ -8,18 +8,18 @@ import (
 	"fmt"
 )
 
-const filename = "channels.json"
-
+var filename string
 var memory map[string]bool
 var lock = sync.RWMutex{}
 
-func init() {
-	fmt.Println("Loading channels...")
+func loadChannels(id string) {
 	lock.Lock()
 	defer lock.Unlock()
 
 	var data []byte
 	var err error
+	filename = id + "-channels.json"
+
 	if data, err = ioutil.ReadFile(filename); os.IsNotExist(err) {
 		fmt.Println("Creating new channels json...")
 		memory = make(map[string]bool)
