@@ -8,11 +8,9 @@ import (
 	"strings"
 	"bytes"
 	"text/template"
-	"regexp"
 )
 
 var templ = template.Must(template.ParseFiles("response.html"))
-var commandMatcher = regexp.MustCompile("^!(\\d+)")
 
 func onMessage(s *discordgo.Session, m *discordgo.MessageCreate) {
 	// ignore self or bots
@@ -20,28 +18,15 @@ func onMessage(s *discordgo.Session, m *discordgo.MessageCreate) {
 		return
 	}
 
-	// only process commands if in user mod
-	if !s.State.User.Bot {
-		// command has come from owner
-		if m.Author.ID == s.State.User.ID {
-			if ok, id := bugCommand(m.Content); ok {
-				s.ChannelMessageDelete(m.ChannelID, m.ID)
-				target, err := s.State.Message(m.ChannelID, id)
-				if err == nil {
-					processMessage(s, target)
-				}
-			}
-		}
+	if processCommand(s, m) {
 		return
 	}
 
-	if m.Author.ID == s.State.User.ID {
+	if !autoReactOnChannel(m.ChannelID) {
 		return
 	}
 
-	// ignore other channels
-	ch, err := s.Channel(m.ChannelID)
-	if err != nil || strings.ToLower(ch.Name) != channel {
+	if s.State.User.ID == m.Author.ID && len(m.Mentions) > 0 {
 		return
 	}
 
@@ -58,12 +43,13 @@ func onMessage(s *discordgo.Session, m *discordgo.MessageCreate) {
 	processMessage(s, m.Message)
 }
 
-func bugCommand(content string) (bool, string) {
-	groups := commandMatcher.FindStringSubmatch(content)
-	if len(groups) == 2 {
-		return true, groups[1]
-	}
-	return false, ""
+func autoReactOnChannel(id string) bool {
+	return ForEach(func(ch string, auto bool) bool {
+		if ch == id {
+			return auto
+		}
+		return false
+	})
 }
 
 func processMessage(s *discordgo.Session, m *discordgo.Message) {

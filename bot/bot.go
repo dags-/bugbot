@@ -8,7 +8,6 @@ import (
 )
 
 const teacher = "bugbot-teacher"
-const channel = "support"
 
 func Start(user bool, token string) {
 	go issue.Init()
