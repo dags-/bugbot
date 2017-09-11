@@ -59,7 +59,10 @@ func autoReactOnChannel(id string) bool {
 
 func processMessage(s *discordgo.Session, m *discordgo.Message) {
 	// process message and send response if bug detected
-	s.ChannelTyping(m.ChannelID)
+	if s.State.User.Bot {
+		s.ChannelTyping(m.ChannelID)
+	}
+
 	if response, ok := message.Process(convertMessage(m)); ok {
 		buf := bytes.Buffer{}
 		if err := templ.Execute(&buf, response); err == nil {
