@@ -34,13 +34,13 @@ func remindChannel(s *discordgo.Session, ch *discordgo.Channel)  {
 		return
 	}
 
-	history, err := s.ChannelMessages(ch.ID, 20, "", "", "")
+	history, err := s.ChannelMessages(ch.ID, 30, "", "", "")
 	if err != nil {
 		fmt.Println(err)
 		return
 	}
 
-	if len(history) == 0 {
+	if len(history) < 30 {
 		return
 	}
 

@@ -15,12 +15,18 @@ func main() {
 	pass := flag.String("pass", "", "Password")
 	token := flag.String("token", "", "Auth token")
 	visionToken := flag.String("vision", "", "Google vision API token")
+	teacherID := flag.String("teacher", "", "Teacher ID")
 	flag.Parse()
 
 	if *email != "" && *pass != "" && *token == "" {
 		fmt.Println("Fetching user token...")
-		token, _ = bot.GetUserToken(*email, *pass)
+		token, err := bot.GetUserToken(*email, *pass)
 		b := true
+		if err != nil {
+			fmt.Println(err)
+			b = false
+		}
+		fmt.Println(*token)
 		user = &b
 	}
 
@@ -36,7 +42,7 @@ func main() {
 	go handleStop()
 
 	vision.SetToken(*visionToken)
-	bot.Start(*user, *token)
+	bot.Start(*user, *token, *teacherID)
 }
 
 func handleStop() {

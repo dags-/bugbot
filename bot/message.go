@@ -35,8 +35,8 @@ func onMessage(s *discordgo.Session, m *discordgo.MessageCreate) {
 		}
 	}
 
-	// user has tagged the bot and has 'bugbot-teacher' role
-	if s.State.User.Bot && mentionsBot(s, m) && canTeach(s, m) {
+	// user has tagged the bot and is the 'teacher'
+	if s.State.User.Bot && mentionsBot(s, m) && m.Author.ID == teacher {
 		s.ChannelTyping(m.ChannelID)
 		if response, ok := tryLearn(s, m); ok {
 			s.ChannelMessageSend(m.ChannelID, response)
@@ -104,51 +104,6 @@ func mentionsBot(s *discordgo.Session, m *discordgo.MessageCreate) (bool) {
 		}
 	}
 	return false
-}
-
-func canTeach(s *discordgo.Session, m *discordgo.MessageCreate) (bool) {
-	var channel *discordgo.Channel
-	var member *discordgo.Member
-	var err error
-
-	if channel, err = s.Channel(m.ChannelID); err != nil {
-		fmt.Println(err)
-		return false
-	}
-
-	if member, err = s.GuildMember(channel.GuildID, m.Author.ID); err != nil {
-		fmt.Println(err)
-		return false
-	}
-
-	role := getRoleId(s, channel.GuildID)
-	if role == "" {
-		return false
-	}
-
-	for _, owned := range member.Roles {
-		if owned == role {
-			return true
-		}
-	}
-
-	return false
-}
-
-func getRoleId(s *discordgo.Session, guild string) (string) {
-	roles, err := s.GuildRoles(guild)
-	if err != nil {
-		fmt.Println(err)
-		return ""
-	}
-
-	for _, role := range roles {
-		if role.Name == teacher {
-			return role.ID
-		}
-	}
-
-	return ""
 }
 
 func tryLearn(s *discordgo.Session, m *discordgo.MessageCreate) (string, bool) {

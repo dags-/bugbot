@@ -7,15 +7,16 @@ import (
 	"github.com/dags-/bugbot/issue"
 )
 
-const teacher = "bugbot-teacher"
+var teacher = ""
 
-func Start(user bool, token string) {
+func Start(user bool, token string, teacherId string) {
 	go issue.Init()
 
 	if !user {
 		token = "Bot " + token
 	}
 
+	teacher = teacherId
 	s, err := discordgo.New(token)
 	if err != nil {
 		fmt.Println("error creating Discord session,", err)
