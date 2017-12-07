@@ -50,7 +50,7 @@ func urlWorker(done chan interface{}, m *Message) (*worker) {
 		defer close(worker.lookups)
 		defer close(worker.results)
 
-		urls := xurls.Relaxed.FindAllString(m.Content, -1)
+		urls := xurls.Relaxed().FindAllString(m.Content, -1)
 		wg := sync.WaitGroup{}
 		wg.Add(len(urls) * 2)
 
