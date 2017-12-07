@@ -21,23 +21,8 @@ func contentWorker(done chan interface{}, m *Message) (*worker) {
 	go func() {
 		defer close(worker.lookups)
 		defer close(worker.results)
-
-		wg := sync.WaitGroup{}
-		wg.Add(2)
-
-		go func() {
-			defer wg.Done()
-			scanner := util.NewLogScanner(strings.NewReader(m.Content), false)
-			processScanner(worker, scanner, "common error detected!", "message")
-		}()
-
-		go func() {
-			defer wg.Done()
-			scanner := util.NewLogScanner(strings.NewReader(m.Content), false)
-			lookupScanner(worker, scanner, "message")
-		}()
-
-		wg.Wait()
+		scanner := util.NewLogScanner(strings.NewReader(m.Content), false)
+		processScanner(worker, scanner, "common error detected!", "message")
 	}()
 
 	return worker
@@ -52,16 +37,12 @@ func urlWorker(done chan interface{}, m *Message) (*worker) {
 
 		urls := xurls.Relaxed().FindAllString(m.Content, -1)
 		wg := sync.WaitGroup{}
-		wg.Add(len(urls) * 2)
+		wg.Add(len(urls))
 
 		for _, u := range urls {
 			go func() {
 				defer wg.Done()
 				processURL(worker, u, true, "common error detected!", u)
-			}()
-			go func() {
-				defer wg.Done()
-				lookupURL(worker, u, true, u)
 			}()
 		}
 
@@ -80,17 +61,12 @@ func attachmentWorker(done chan interface{}, m *Message) (*worker) {
 
 		resources := m.Resources
 		wg := sync.WaitGroup{}
-		wg.Add(len(resources) * 2)
+		wg.Add(len(resources))
 
 		for _, r := range resources {
 			go func() {
 				defer wg.Done()
 				processURL(worker, r.URL, false, "common error detected!", r.Name)
-			}()
-
-			go func() {
-				defer wg.Done()
-				lookupURL(worker, r.URL, false, r.Name)
 			}()
 		}
 
@@ -109,16 +85,12 @@ func embedWorker(done chan interface{}, m *Message) (*worker) {
 
 		thumbnails := m.Thumbnails
 		wg := sync.WaitGroup{}
-		wg.Add(len(thumbnails) * 2)
+		wg.Add(len(thumbnails))
 
 		for _, t := range thumbnails {
 			go func() {
 				defer wg.Done()
 				processImage(worker, t.URL, "common error detected!", t.Name)
-			}()
-
-			go func() {
-				defer wg.Done()
 			}()
 		}
 
